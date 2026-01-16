@@ -6,6 +6,7 @@ from serial.tools import list_ports
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTextEdit
 from PySide6.QtGui import QImage, QPixmap, QTextCursor
 from PySide6.QtCore import QThread, Signal, Slot, QObject, QTimer
+import argparse
 
 import config  # 导入新配置
 from detect import YOLODetector  # 导入新写的类
@@ -128,8 +129,9 @@ class MainWindow(QWidget):
     stats_signal = Signal(dict)
     continue_send_signal = Signal()
 
-    def __init__(self):
+    def __init__(self, source=0):
         super().__init__()
+        self.source = source
         self.setWindowTitle("智能垃圾分拣系统")
         self.resize(1080, 650)
 
@@ -207,7 +209,7 @@ class MainWindow(QWidget):
     def start_detection_thread(self):
         self.log_signal.emit("⏳ 正在加载模型，请稍候...")
         # 这里的 0 代表默认摄像头
-        self.detection_thread = DetectionThread(source=0)
+        self.detection_thread = DetectionThread(source=self.source)
         self.detection_thread.frame_ready.connect(self.update_frame)
         self.detection_thread.start()
         self.log_signal.emit("✅ 模型加载完毕，开始检测")
@@ -410,7 +412,16 @@ class MainWindow(QWidget):
         event.accept()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--source', type=str, default='0', help='摄像头源: 0, 1或视频路径')
+    args = parser.parse_args()
+
+    source = args.source
+    if source.isnumeric():
+        source = int(source)
+
     app = QApplication(sys.argv)
-    win = MainWindow()
+
+    win = MainWindow(source=source)
     win.show()
     sys.exit(app.exec())
