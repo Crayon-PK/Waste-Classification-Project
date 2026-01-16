@@ -1,0 +1,52 @@
+# ===========================
+# 1. Firmware (STM32/Keil MDK)
+# ===========================
+# 过滤编译产生的中间文件 (Objects 和 Listings 文件夹里的东西)
+*.o
+*.d
+*.crf
+*.iex
+*.lnp
+*.sct
+*.lst
+*.map
+*.htm
+*.dep
+*.bak
+
+# 过滤调试器生成的配置 (保留 .uvprojx 和 .uvoptx 用于恢复工程设置)
+*.uvguix.*
+*.uvgui.*
+DebugConfig/
+RTE/
+
+# 忽略编译输出文件夹
+Firmware/MDK-ARM/Objects/
+Firmware/MDK-ARM/Listings/
+Firmware/MDK-ARM/DebugConfig/
+
+# ===========================
+# 2. Software (Python/YOLO)
+# ===========================
+# Python 缓存
+__pycache__/
+*.pyc
+
+# IDE 设置
+.idea/
+.vscode/
+
+# 虚拟环境
+venv/
+env/
+
+# ===========================
+# 3. Mechanical (SolidWorks)
+# ===========================
+# 忽略 SolidWorks 打开时产生的临时锁文件 (以 ~$ 开头)
+~$*
+*.swp
+
+# ===========================
+# 4. Hardware (PCB)
+.eprj_backup
