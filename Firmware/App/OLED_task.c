@@ -8,7 +8,7 @@
 #include "OLED.h"
 
 // OLED任务参数设置
-#define OLED_TASK_PRIO    3       // 优先级
+#define OLED_TASK_PRIO    2       // 优先级
 #define OLED_TASK_STACK   512     // 栈大小，单位：word
 static TaskHandle_t oled_handle;
 
@@ -27,7 +27,7 @@ void oled(void *pvParameters)
 	uint8_t state;
 	while(1)
 	{
-		if(shared_wait_oled(0) == pdTRUE)
+		if(shared_wait_oled(pdMS_TO_TICKS(100)) == pdTRUE)
 		{
 			shared_copy_packet(&oled);
 			

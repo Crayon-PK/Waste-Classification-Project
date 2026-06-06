@@ -3,7 +3,7 @@ import time
 import threading
 from serial.tools import list_ports
 from typing import Optional, Callable
-
+import time
 
 class SerialTool:
     def __init__(self):
@@ -11,6 +11,8 @@ class SerialTool:
         self.receive_thread: Optional[threading.Thread] = None
         self.is_running: bool = False
         self.receive_callback: Optional[Callable[[bytes], None]] = None  # 回调传完整数据帧
+        self.last_send_time: float = 0.0
+        
 
     def connect(self, port: Optional[str] = None, baudrate: int = 9600, timeout: float = 0.05) -> bool:
         try:
@@ -22,14 +24,13 @@ class SerialTool:
 
             self.ser = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
             
-            # === 新增：连接成功后清空一下输入输出缓冲区 ===
-            # 这样可以防止上次运行残留的数据导致乱码
             self.ser.reset_input_buffer()
             self.ser.reset_output_buffer()
             # ==========================================
             
             return True
-        except Exception:
+        except Exception as e:
+            print(f"串口连接失败的真正原因：{e}")  # 把这句加上
             return False
 
     def send_frame(self, tag: int, x: int, y: int) -> bool:
@@ -37,8 +38,8 @@ class SerialTool:
         发送完整数据帧
         帧结构：[Tag][XH][XL][YH][YL][ZH][ZL][Angle]
         """
-        z = 400     # Z轴固定数据
-        angle = 90  # Angle固定数据
+        z = 0     # Z轴固定数据
+        angle = 150  # Angle固定数据
         if not (self.ser and self.ser.is_open):
             return False
 
@@ -51,6 +52,7 @@ class SerialTool:
                 angle & 0xFF
             ])
             self.ser.write(frame)
+            self.last_send_time = time.perf_counter()
             return True
         except Exception:
             return False

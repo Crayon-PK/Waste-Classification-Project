@@ -2,7 +2,7 @@
 # ================= 全局配置 =================
 
 # 串口配置
-SERIAL_PORT = None  # None 表示自动寻找第一个可用串口，也可以指定如 'COM3'
+SERIAL_PORT = "COM12"  # None 表示自动寻找第一个可用串口，也可以指定如 'COM3'
 BAUD_RATE = 9600
 TIMEOUT = 0.1
 

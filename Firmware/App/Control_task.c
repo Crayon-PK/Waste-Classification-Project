@@ -10,7 +10,7 @@
 #include "servo.h"
 
 // Control任务参数设置
-#define CONTROL_TASK_PRIO       	2             // 优先级
+#define CONTROL_TASK_PRIO       	3             // 优先级
 #define CONTROL_TASK_STACK_SIZE 	512			  // 栈大小
 static TaskHandle_t control_task_handle;
 
@@ -19,10 +19,10 @@ QueueHandle_t Control_StateQueue; // 控制状态队列
 // 垃圾桶坐标定义 [X, Y]
 uint16_t binPos_t[4][2] = 
 {
-    {100,200},
-    {100,400},
-    {100,600},
-    {100,800}
+    {2000,750},
+    {2000,1500},
+    {2000,2250},
+    {2000,3000}
 };
 
 static NrfDataPacket_t local; 			// 本地控制数据副本 
@@ -67,23 +67,29 @@ void control(void *pvParameters)
         {
             case CTRL_MOVE_XY:
 				Control_SetState(stage); // 更新任务状态
-				wait_bits = 0; // 清空等待标志
 				
-				// --- X轴移动逻辑 ---
-                if (local.posX != motor_pos_x) // 只有位置不同才移动
-                {
-                    Stepper_Move(MOTOR_X, local.posX);
-                    wait_bits |= EVT_X_DONE;   // 标记需要等待 X 完成
-                }
-
-                // --- Y轴移动逻辑 ---
+				// --- 先移动Y轴并等待完成（防撞） ---
                 if (local.posY != motor_pos_y)
                 {
                     Stepper_Move(MOTOR_Y, local.posY);
-                    wait_bits |= EVT_Y_DONE;   // 标记需要等待 Y 完成
+                    xEventGroupWaitBits(g_controlEventGroup, EVT_Y_DONE, 
+                                        pdTRUE, pdTRUE, portMAX_DELAY);
+                }
+				
+                // --- 再移动X轴并等待完成 ---
+                if (local.posX != motor_pos_x)
+                {
+                    Stepper_Move(MOTOR_X, local.posX);
+                    xEventGroupWaitBits(g_controlEventGroup, EVT_X_DONE, 
+                                        pdTRUE, pdTRUE, portMAX_DELAY);
                 }
 				
                 // 等待 XY 两轴完成
+				if (local.label == 0xFF)
+                {
+                    stage = CTRL_RELEASE; // 如果是复位，直接跳到释放阶段恢复舵机角度并结束
+                    break;
+                }
                 stage = CTRL_MOVE_Z_DOWN;
                 break;
 
@@ -109,10 +115,9 @@ void control(void *pvParameters)
 
             case CTRL_MOVE_Z_UP:
 				Control_SetState(stage); // 更新任务状态
-                // --- Z轴归零逻辑 ---
                 if (motor_pos_z != 0) // 如果当前不在0点，才归零
                 {
-                    Stepper_Move(MOTOR_Z, 0);
+                    Stepper_Move(MOTOR_Z, 1);
                     xEventGroupWaitBits(g_controlEventGroup, EVT_Z_DONE, 
                                         pdTRUE, pdTRUE, portMAX_DELAY);
                 }
@@ -153,7 +158,7 @@ void control(void *pvParameters)
 			}
             case CTRL_RELEASE:
 				Control_SetState(stage); // 更新任务状态
-                Servo_SetAngle(0);
+                Servo_SetAngle(90);
                 vTaskDelay(500);
 			
                 stage = CTRL_IDLE;  // 完成本包处理

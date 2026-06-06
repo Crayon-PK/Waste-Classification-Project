@@ -8,7 +8,7 @@
 #include "NRF24L01.h"
 
 // NRF任务参数设置
-#define NRF24L01_TASK_PRIO       3  
+#define NRF24L01_TASK_PRIO       4  
 #define NRF24L01_TASK_STACK_SIZE 512
 static TaskHandle_t nrf24l01_task_handle;
 
